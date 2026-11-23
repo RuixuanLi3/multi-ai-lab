@@ -1,0 +1,30 @@
+# 自动检查：PR 上跑测试和代码检查。按项目实际情况保留 Node 或 Python 段落。
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # —— Node 项目（没有 package.json 时自动跳过）——
+      - uses: actions/setup-node@v4
+        if: hashFiles('package.json') != ''
+        with:
+          node-version: 20
+      - if: hashFiles('package.json') != ''
+        run: npm ci
+      - if: hashFiles('package.json') != ''
+        run: npm run lint --if-present && npm test --if-present
+
+      # —— Python 项目（没有 requirements.txt 时自动跳过）——
+      - uses: actions/setup-python@v5
+        if: hashFiles('requirements.txt') != ''
+        with:
+          python-version: "3.12"
+      - if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt pytest && pytest -q
